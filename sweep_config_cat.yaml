@@ -19,14 +19,14 @@ metric:
 parameters:
   # roi_heads_score_thresh:
   #   values: [0.6] # [0.6, 0.9]
-  rpn_bg_iou_thresh:
-    min: 0.1
-    max: 0.3
-    distribution: uniform
-  rpn_fg_iou_thresh:
-    min: 0.85
-    max: 0.95
-    distribution: uniform
+  # rpn_bg_iou_thresh:
+  #   min: 0.1
+  #   max: 0.3
+  #   distribution: uniform
+  # rpn_fg_iou_thresh:
+  #   min: 0.85
+  #   max: 0.95
+  #   distribution: uniform
   # roi_heads_nms_thresh:
   #   values: [0.3, 0.4]  # [0.3, 0.6]
   # learning_rate:
@@ -41,9 +41,9 @@ parameters:
   #   min: 0.5
   #   max: 0.8
   #   distribution: uniform
-  # batch_size:
-  #   values: [4, 8]
-  lr_decrease_ratio:
-    min: 50
-    max: 1000
-    distribution: uniform
+  batch_size:
+    values: [2, 4]
+  # lr_decrease_ratio:
+  #   min: 50
+  #   max: 1000
+  #   distribution: uniform
