@@ -565,6 +565,8 @@ def parse_arguments():
     parser.add_argument('--unfreeze_lr_multiplier', type=float, default=0.1, help='Learning rate multiplier for unfrozen layers')
     parser.add_argument('--max_unfrozen_layers', type=int, default=4, help='Maximum number of layers to unfreeze')
     parser.add_argument('--lr_decrease_ratio', type=float, default=100, help='Ratio for learning rate decrease (e.g., 50 to 1000)')
+    parser.add_argument('--unfreeze_start_epoch', type=int, default=10, help='Epoch to start unfreezing layers')
+    parser.add_argument('--unfreeze_frequency', type=int, default=10, help='Frequency of unfreezing layers (in epochs)')
     return parser.parse_args()
 
 def unfreeze_layers(model, num_layers):
