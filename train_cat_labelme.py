@@ -368,8 +368,8 @@ def evaluate(model, data_loader, device, epoch, args):
             
             boxes, scores, labels = filter_kidney_predictions(boxes, scores, labels)
             
-            if i * len(images) + j < 10:
-                print(f"Image {i * len(images) + j + 1}: boxes: {boxes}, scores: {scores}, labels: {labels}")
+            # if i * len(images) + j < 10:
+            #     print(f"Image {i * len(images) + j + 1}: boxes: {boxes}, scores: {scores}, labels: {labels}")
             
             if len(boxes) > 0:
                 for box, score, label in zip(boxes, scores, labels):
