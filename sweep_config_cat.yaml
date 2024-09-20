@@ -1,6 +1,6 @@
-program: tools/train_cat_labelme.py
+program: train_cat_labelme.py
 method: bayes
-name: cat_kidney_sweep
+name: cat_kidney_sweep_gradual_unfreeze
 command:
   - ${env}
   - python
@@ -11,7 +11,8 @@ command:
   - "resnet152"
   - "--wandb"
   - "--num_epochs"
-  - "50"
+  - "80"
+  - "--gradual_unfreeze"
   - ${args}
 metric:
   name: mAP
@@ -41,9 +42,23 @@ parameters:
   #   min: 0.5
   #   max: 0.8
   #   distribution: uniform
-  batch_size:
-    values: [2, 4]
+  # batch_size:
+  #   values: [2, 4]
   # lr_decrease_ratio:
   #   min: 50
   #   max: 1000
   #   distribution: uniform
+  unfreeze_start_epoch:
+    min: 5
+    max: 20
+    distribution: int_uniform
+  unfreeze_frequency:
+    values: [5, 10, 15]
+  unfreeze_lr_multiplier:
+    min: 0.01
+    max: 0.1
+    distribution: log_uniform
+  max_unfrozen_layers:
+    min: 3
+    max: 8
+    distribution: int_uniform

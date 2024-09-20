@@ -28,7 +28,7 @@ import torchvision.ops
 
 # Initialize global variables
 use_wandb = False
-use_colab = False
+use_colab = True
 
 class CocoDataset(Dataset):
     def __init__(self, root, annFile, transforms=None, preload=False, only_10=False, subfolder=''):
@@ -561,6 +561,9 @@ def parse_arguments():
     parser.add_argument('--tta_contrasts', nargs='+', type=float, default=[0.5, 1.0, 1.5], help='Contrast factors for TTA (space-separated list of floats)')
     parser.add_argument('--tta_brightness', nargs='+', type=float, default=[0.5, 1.0, 1.5], help='Brightness factors for TTA (space-separated list of floats)')
     parser.add_argument('--gradual_unfreeze', action='store_true', help='Use gradual unfreezing strategy')
+    parser.add_argument('--unfreeze_schedule', type=str, default='10:1,20:2,30:3,40:4', help='Schedule for unfreezing layers (epoch:num_layers,...)')
+    parser.add_argument('--unfreeze_lr_multiplier', type=float, default=0.1, help='Learning rate multiplier for unfrozen layers')
+    parser.add_argument('--max_unfrozen_layers', type=int, default=4, help='Maximum number of layers to unfreeze')
     parser.add_argument('--lr_decrease_ratio', type=float, default=100, help='Ratio for learning rate decrease (e.g., 50 to 1000)')
     return parser.parse_args()
 
