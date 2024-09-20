@@ -33,7 +33,7 @@ parameters:
   # learning_rate:
   #   min: 0.00002
   #   max: 0.0002
-  #   distribution: log_uniform
+  #   distribution: log_uniform_values
   # roi_heads_score_thresh:
   #   min: 0.3
   #   max: 0.7
@@ -57,7 +57,7 @@ parameters:
   unfreeze_lr_multiplier:
     min: 0.01
     max: 0.1
-    distribution: log_uniform
+    distribution: log_uniform_values
   max_unfrozen_layers:
     min: 3
     max: 8
