@@ -452,13 +452,6 @@ def create_model(args, num_classes):
 
     backbone = resnet_fpn_backbone(backbone_name=args.backbone, weights=weights, trainable_layers=0)  # =3 is fully unfrozen; Start with all layers frozen
 
-    # anchor_sizes = (
-    #     (87,87),    # Very small objects
-    #     (120,120),  # Small objects
-    #     (170, 170),  # Medium objects
-    #     (225, 225),  # Very large objects
-    # )
-    #aspect_ratios = ((0.66, 0.76, 0.87, 1.0),) * len(anchor_sizes)
     anchor_sizes = (
         (89, 89),    # Very small objects
         (112, 112),  # Small objects
@@ -472,8 +465,9 @@ def create_model(args, num_classes):
 
     model = FasterRCNN(backbone, num_classes=num_classes, rpn_anchor_generator=anchor_generator)
 
-    for name, parameter in model.backbone.body.named_parameters():
-        parameter.requires_grad = True
+    # Remove or comment out this loop
+    # for name, parameter in model.backbone.body.named_parameters():
+    #     parameter.requires_grad = True
 
     return model
 
@@ -537,7 +531,7 @@ def parse_arguments():
     parser.add_argument('--only_10', action='store_true', help='Use only 10 samples for quick testing')
     parser.add_argument('--backbone', type=str, default='resnet152', choices=['resnet50', 'resnet101', 'resnet152'],
                         help='Backbone architecture to use')
-    parser.add_argument('--batch_size', type=int, default=4, help='Batch size for training')
+    parser.add_argument('--batch_size', type=int, default=8, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='Learning rate for training')
     parser.add_argument('--no_sweep', action='store_true', help='Disable wandb sweep and use specified hyperparameters')
     parser.add_argument('--no_preload', action='store_true', help='Preload images into memory')
@@ -561,12 +555,14 @@ def parse_arguments():
     parser.add_argument('--tta_contrasts', nargs='+', type=float, default=[0.5, 1.0, 1.5], help='Contrast factors for TTA (space-separated list of floats)')
     parser.add_argument('--tta_brightness', nargs='+', type=float, default=[0.5, 1.0, 1.5], help='Brightness factors for TTA (space-separated list of floats)')
     parser.add_argument('--gradual_unfreeze', action='store_true', help='Use gradual unfreezing strategy')
-    parser.add_argument('--unfreeze_lr_multiplier', type=float, default=0.1, help='Learning rate multiplier for unfrozen layers')
+    parser.add_argument('--unfreeze_schedule', type=str, default='10:1,20:2,30:3,40:4', help='Schedule for unfreezing layers (epoch:num_layers,...)')
     parser.add_argument('--max_unfrozen_layers', type=int, default=4, help='Maximum number of layers to unfreeze')
-    parser.add_argument('--lr_decrease_ratio', type=float, default=1000, help='Ratio for learning rate decrease (e.g., 50 to 1000)')
-    parser.add_argument('--unfreeze_start_epoch', type=int, default=10, help='Epoch to start unfreezing layers')
-    parser.add_argument('--unfreeze_frequency', type=int, default=10, help='Frequency of unfreezing layers (in epochs)')
+    parser.add_argument('--lr_decrease_ratio', type=float, default=100, help='Ratio for learning rate decrease (e.g., 50 to 1000)')
+    parser.add_argument('--unfreeze_start_epoch', type=int, default=20, help='Epoch to start unfreezing layers')
+    parser.add_argument('--unfreeze_frequency', type=int, default=20, help='Frequency of unfreezing layers (in epochs)')
+    parser.add_argument('--unfreeze_lr_multiplier', type=float, default=0.05, help='Learning rate multiplier for unfrozen layers')
     return parser.parse_args()
+
 
 def unfreeze_layers(model, num_layers):
     for name, param in model.backbone.body.named_parameters():
