@@ -11,6 +11,7 @@ import os
 from pycocotools.coco import COCO
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models import ResNet152_Weights
+import argparse
 
 def create_model(device, num_classes):
     weights = ResNet152_Weights.DEFAULT
@@ -134,11 +135,15 @@ def main(model_path, coco_path, img_dir, save_dir, device):
 
 #/content/drive/MyDrive/MM/CatKidney/data/cat-dataset/ozt72mge/best_model.pth
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Visualize predictions for cat kidney dataset")
+    parser.add_argument('--runId', type=str, default='l5v1rtfk', help='Run ID for the model')
+
+    args = parser.parse_args()
+
     data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
-    model_path = data_root + 'l5v1rtfk/best_model.pth'
+    model_path = f"{data_root}{args.runId}/best_model.pth"
     coco_path = data_root + 'COCO_2/val_Data_coco_format-labelme.json'
     img_dir = data_root
     save_dir = data_root + 'predictions_output-sep20/'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     main(model_path, coco_path, img_dir, save_dir, device)
-    
