@@ -235,14 +235,14 @@ class CustomToTensor:
         image = TF.to_tensor(image)
         return image, target
 
-def get_transform(train):
+def get_transform(train, brightness_range, contrast_range):
     transforms = []
     transforms.append(CustomToTensor())
     if train:
         transforms.extend([
             RandomAffine(degrees=(-5, 5), translate=(0.1, 0.1), scale=(0.9, 1.1), fill=0),
-            AdjustBrightness((0.5, 1.5)),
-            AdjustContrast((0.5, 1.5)),
+            AdjustBrightness(brightness_range),
+            AdjustContrast(contrast_range),
             GaussianBlur(kernel_size=random.choice([3, 5, 7]), sigma=(0.1, 2.5)),
             RandomAdjustSharpness(sharpness_factor=2, p=0.5),
         ])
@@ -549,8 +549,10 @@ def parse_arguments():
     parser.add_argument('--rpn_post_nms_top_n', type=int, default=50, help='RPN post-NMS top N')
     parser.add_argument('--score_thresh', type=float, default=0.68, help='Score threshold for detections')
     parser.add_argument('--num_epochs', type=int, default=101, help='Number of epochs to train for')
-    parser.add_argument('--brightness_range', type=parse_tuple, default=(0.5, 1.5), help='Brightness adjustment range')
-    parser.add_argument('--contrast_range', type=parse_tuple, default=(0.5, 1.5), help='Contrast adjustment range')
+    parser.add_argument('--brightness_min', type=float, default=0.5, help='Minimum brightness factor')
+    parser.add_argument('--brightness_max', type=float, default=1.5, help='Maximum brightness factor')
+    parser.add_argument('--contrast_min', type=float, default=0.5, help='Minimum contrast factor')
+    parser.add_argument('--contrast_max', type=float, default=1.5, help='Maximum contrast factor')
     parser.add_argument('--use_tta', action='store_true', help='Use Test Time Augmentation during evaluation')
     parser.add_argument('--tta_contrasts', nargs='+', type=float, default=[0.5, 1.0, 1.5], help='Contrast factors for TTA (space-separated list of floats)')
     parser.add_argument('--tta_brightness', nargs='+', type=float, default=[0.5, 1.0, 1.5], help='Brightness factors for TTA (space-separated list of floats)')
@@ -610,8 +612,10 @@ def main():
         train_ann_file = data_root + 'Train/only_with_bbox_Data_coco_format.json'
         val_ann_file = data_root + 'Test/only_with_bbox_Data_coco_format.json'
     preload = not args.no_preload
-    train_dataset = CocoDataset(data_root, train_ann_file, transforms=get_transform(train=True), preload=preload, only_10=only_10)#, subfolder='Train')
-    val_dataset = CocoDataset(data_root, val_ann_file, transforms=get_transform(train=False), preload=preload, only_10=only_10)#, subfolder='Test')
+    brightness_range = (args.brightness_min, args.brightness_max)
+    contrast_range = (args.contrast_min, args.contrast_max)
+    train_dataset = CocoDataset(data_root, train_ann_file, transforms=get_transform(train=True, brightness_range=brightness_range, contrast_range=contrast_range), preload=preload, only_10=only_10)#, subfolder='Train')
+    val_dataset = CocoDataset(data_root, val_ann_file, transforms=get_transform(train=False, brightness_range=brightness_range, contrast_range=contrast_range), preload=preload, only_10=only_10)#, subfolder='Test')
 
     print("Creating data loaders...")
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True, collate_fn=collate_fn)

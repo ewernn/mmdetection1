@@ -1,6 +1,6 @@
 program: train_cat_labelme.py
 method: bayes
-name: cat_kidney_sweep_gradual_unfreeze
+name: cat_kidney_sweep_brightness_contrast
 command:
   - ${env}
   - python
@@ -11,54 +11,25 @@ command:
   - "resnet152"
   - "--wandb"
   - "--num_epochs"
-  - "80"
-  - "--gradual_unfreeze"
+  - "40"
   - ${args}
 metric:
   name: mAP
   goal: maximize
 parameters:
-  # roi_heads_score_thresh:
-  #   values: [0.6] # [0.6, 0.9]
-  # rpn_bg_iou_thresh:
-  #   min: 0.1
-  #   max: 0.3
-  #   distribution: uniform
-  # rpn_fg_iou_thresh:
-  #   min: 0.85
-  #   max: 0.95
-  #   distribution: uniform
-  # roi_heads_nms_thresh:
-  #   values: [0.3, 0.4]  # [0.3, 0.6]
-  # learning_rate:
-  #   min: 0.00002
-  #   max: 0.0002
-  #   distribution: log_uniform_values
-  # roi_heads_score_thresh:
-  #   min: 0.3
-  #   max: 0.7
-  #   distribution: uniform
-  # score_thresh:
-  #   min: 0.5
-  #   max: 0.8
-  #   distribution: uniform
-  # batch_size:
-  #   values: [2, 4]
-  # lr_decrease_ratio:
-  #   min: 50
-  #   max: 1000
-  #   distribution: uniform
-  unfreeze_start_epoch:
-    min: 5
-    max: 20
-    distribution: int_uniform
-  unfreeze_frequency:
-    values: [5, 10, 15]
-  unfreeze_lr_multiplier:
-    min: 0.01
-    max: 0.1
-    distribution: log_uniform_values
-  max_unfrozen_layers:
-    min: 3
-    max: 8
-    distribution: int_uniform
+  brightness_min:
+    min: 0.3
+    max: 0.7
+    distribution: uniform
+  brightness_max:
+    min: 1.3
+    max: 1.7
+    distribution: uniform
+  contrast_min:
+    min: 0.3
+    max: 0.7
+    distribution: uniform
+  contrast_max:
+    min: 1.3
+    max: 1.7
+    distribution: uniform
