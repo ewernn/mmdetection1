@@ -470,6 +470,11 @@ def create_model(args, num_classes):
 
     model = FasterRCNN(backbone, num_classes=num_classes, rpn_anchor_generator=anchor_generator)
 
+    # Ensure all parameters are trainable if not using gradual unfreeze
+    if not args.gradual_unfreeze:
+        for param in model.parameters():
+            param.requires_grad = True
+
     return model
 
 def modify_model(model, num_classes, args):
