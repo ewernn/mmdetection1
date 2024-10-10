@@ -450,7 +450,12 @@ def create_model(args, num_classes):
     if args.backbone == 'resnet101': weights = ResNet101_Weights.DEFAULT
     if args.backbone == 'resnet152': weights = ResNet152_Weights.DEFAULT
 
-    backbone = resnet_fpn_backbone(backbone_name=args.backbone, weights=weights, trainable_layers=0)  # =3 is fully unfrozen; Start with all layers frozen
+    if args.gradual_unfreeze:
+        trainable_layers = 0  # Start with all layers frozen
+    else:
+        trainable_layers = 5  # Make all layers trainable
+
+    backbone = resnet_fpn_backbone(backbone_name=args.backbone, weights=weights, trainable_layers=trainable_layers)
 
     anchor_sizes = (
         (89, 89),    # Very small objects
@@ -464,10 +469,6 @@ def create_model(args, num_classes):
     anchor_generator = AnchorGenerator(sizes=anchor_sizes, aspect_ratios=aspect_ratios)
 
     model = FasterRCNN(backbone, num_classes=num_classes, rpn_anchor_generator=anchor_generator)
-
-    # Remove or comment out this loop
-    # for name, parameter in model.backbone.body.named_parameters():
-    #     parameter.requires_grad = True
 
     return model
 
@@ -511,16 +512,14 @@ def load_checkpoint(filepath, model, optimizer):
 
 def setup_environment(args):
     if args.colab:
-        c2 = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
-        #c2 = '/content/drive/MyDrive/MM/CatKidney/data/cat-dataset/'
+        data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct9/'
+        chkpt_dir = '/content/drive/MyDrive/MM/CatKidney/exps/'
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     else:
         c2 = '/Users/ewern/Desktop/code/MetronMind/c2/'
+        data_root = c2
+        chkpt_dir = c2
         device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-    # data_root = c2 + 'cat-dataset/'
-    # chkpt_dir = c2 + 'exps/'
-    data_root = c2
-    chkpt_dir = c2
     
     return data_root, chkpt_dir, device
 
@@ -549,10 +548,10 @@ def parse_arguments():
     parser.add_argument('--rpn_post_nms_top_n', type=int, default=50, help='RPN post-NMS top N')
     parser.add_argument('--score_thresh', type=float, default=0.68, help='Score threshold for detections')
     parser.add_argument('--num_epochs', type=int, default=101, help='Number of epochs to train for')
-    parser.add_argument('--brightness_min', type=float, default=0.5, help='Minimum brightness factor')
-    parser.add_argument('--brightness_max', type=float, default=1.5, help='Maximum brightness factor')
-    parser.add_argument('--contrast_min', type=float, default=0.5, help='Minimum contrast factor')
-    parser.add_argument('--contrast_max', type=float, default=1.5, help='Maximum contrast factor')
+    parser.add_argument('--brightness_min', type=float, default=0.38, help='Minimum brightness factor')
+    parser.add_argument('--brightness_max', type=float, default=1.42, help='Maximum brightness factor')
+    parser.add_argument('--contrast_min', type=float, default=0.44, help='Minimum contrast factor')
+    parser.add_argument('--contrast_max', type=float, default=1.62, help='Maximum contrast factor')
     parser.add_argument('--use_tta', action='store_true', help='Use Test Time Augmentation during evaluation')
     parser.add_argument('--tta_contrasts', nargs='+', type=float, default=[0.5, 1.0, 1.5], help='Contrast factors for TTA (space-separated list of floats)')
     parser.add_argument('--tta_brightness', nargs='+', type=float, default=[0.5, 1.0, 1.5], help='Brightness factors for TTA (space-separated list of floats)')
@@ -601,16 +600,12 @@ def main():
 
     print("Initializing datasets...")
     if args.all_images:
-        # /content/drive/MyDrive/MM/CatKidney/data/cat-dataset/COCO_2/test_Data_coco_format-labelme.json
-        train_ann_file = data_root + 'COCO_2/train_Data_coco_format-labelme.json'
-        val_ann_file = data_root + 'COCO_2/val_Data_coco_format-labelme.json'
-        # train_ann_file = data_root + 'COCO_2/train_Data_coco_format.json'
-        # val_ann_file = data_root + 'COCO_2/val_Data_coco_format.json'
-        # train_ann_file = data_root + 'Train/all_images_Data_coco_format.json'
-        # val_ann_file = data_root + 'Test/all_images_Data_coco_format.json'
+        train_ann_file = data_root + 'coco_output/two_only_train_Data_coco_format.json'
+        val_ann_file = data_root + 'coco_output/two_only_val_Data_coco_format.json'
     else:
-        train_ann_file = data_root + 'Train/only_with_bbox_Data_coco_format.json'
-        val_ann_file = data_root + 'Test/only_with_bbox_Data_coco_format.json'
+        train_ann_file = data_root + 'coco_output/two_only_train_Data_coco_format.json'
+        val_ann_file = data_root + 'coco_output/two_only_val_Data_coco_format.json'
+
     preload = not args.no_preload
     brightness_range = (args.brightness_min, args.brightness_max)
     contrast_range = (args.contrast_min, args.contrast_max)
