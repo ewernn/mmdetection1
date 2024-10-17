@@ -659,7 +659,7 @@ def main():
     transform_pipeline, individual_transforms = get_transform(train=True, brightness_range=brightness_range, contrast_range=contrast_range)
 
     # Save augmented images
-    num_images_to_save = 2000
+    num_images_to_save = 1
     print(f"Saving {num_images_to_save} augmented images...")
     for i in range(num_images_to_save):
         image, target = train_dataset[i]
