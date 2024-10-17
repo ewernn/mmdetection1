@@ -236,7 +236,7 @@ class CustomToTensor:
         return image, target
 
 def get_transform(train, brightness_range, contrast_range):
-    transforms = []
+    transforms = [CustomToTensor()]
     if train:
         transforms.extend([
             RandomAffine(degrees=(-5, 5), translate=(0.1, 0.1), scale=(0.9, 1.1), fill=0),
@@ -660,9 +660,8 @@ def main():
     for i in range(num_images_to_save):
         image, target = train_dataset[i]
         
-        # Apply each transform individually
-        for transform in individual_transforms:
-            image, target = transform(image, target)
+        # Apply the entire transform pipeline
+        image, target = transform_pipeline(image, target)
         
         save_augmented_image(image, target, augmented_images_dir, i)
 
