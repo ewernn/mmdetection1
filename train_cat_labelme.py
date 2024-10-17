@@ -61,7 +61,7 @@ class CocoDataset(Dataset):
         if self.preload:
             img = self.images[img_id]
         else:
-            img = Image.open(os.path.join(self.root, path)).convert("L")  # Correct path with subfolder
+            img = Image.open(os.path.join(self.root, path)).convert("L")  # This should return a PIL Image
         num_objs = len(anns)
         boxes = []
         labels = []
@@ -232,11 +232,15 @@ class RandomAdjustSharpness:
 
 class CustomToTensor:
     def __call__(self, image, target):
-        image = TF.to_tensor(image)
+        if isinstance(image, Image.Image):
+            image = TF.to_tensor(image)
+        elif not isinstance(image, torch.Tensor):
+            raise TypeError(f"Image should be PIL Image or torch.Tensor. Got {type(image)}")
+        
         return image, target
 
 def get_transform(train, brightness_range, contrast_range):
-    transforms = [CustomToTensor()]
+    transforms = [CustomToTensor()]  # This will now handle both PIL Images and tensors
     if train:
         transforms.extend([
             RandomAffine(degrees=(-5, 5), translate=(0.1, 0.1), scale=(0.9, 1.1), fill=0),
