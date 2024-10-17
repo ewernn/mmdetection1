@@ -54,11 +54,23 @@ def modify_model(model, num_classes):
     return model
 
 def load_model(model_path, device, num_classes):
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+    
     model = create_model(device, num_classes)
     model = modify_model(model, num_classes)
     model.to(device)
-    checkpoint = torch.load(model_path, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    
+    try:
+        checkpoint = torch.load(model_path, map_location=device, weights_only=True)
+        if 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+        else:
+            model.load_state_dict(checkpoint)
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        raise
+    
     model.eval()
     return model
 
