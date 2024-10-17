@@ -237,7 +237,6 @@ class CustomToTensor:
 
 def get_transform(train, brightness_range, contrast_range):
     transforms = []
-    transforms.append(CustomToTensor())
     if train:
         transforms.extend([
             RandomAffine(degrees=(-5, 5), translate=(0.1, 0.1), scale=(0.9, 1.1), fill=0),
@@ -247,7 +246,7 @@ def get_transform(train, brightness_range, contrast_range):
             RandomAdjustSharpness(sharpness_factor=2, p=0.5),
         ])
     transforms.append(lambda img, target: (expand_channels(img), target))
-    return Compose(transforms), transforms  # Return both the composed transform and the list of transforms
+    return Compose(transforms), transforms
 
 def collate_fn(batch):
     return tuple(zip(*batch))
