@@ -538,7 +538,7 @@ def parse_arguments():
     parser.add_argument('--only_10', action='store_true', help='Use only 10 samples for quick testing')
     parser.add_argument('--backbone', type=str, default='resnet152', choices=['resnet50', 'resnet101', 'resnet152'],
                         help='Backbone architecture to use')
-    parser.add_argument('--batch_size', type=int, default=8, help='Batch size for training')
+    parser.add_argument('--batch_size', type=int, default=1, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='Learning rate for training')
     parser.add_argument('--no_sweep', action='store_true', help='Disable wandb sweep and use specified hyperparameters')
     parser.add_argument('--no_preload', action='store_true', help='Preload images into memory')
@@ -659,7 +659,7 @@ def main():
     transform_pipeline, individual_transforms = get_transform(train=True, brightness_range=brightness_range, contrast_range=contrast_range)
 
     # Save augmented images
-    num_images_to_save = 100
+    num_images_to_save = 2000
     print(f"Saving {num_images_to_save} augmented images...")
     for i in range(num_images_to_save):
         image, target = train_dataset[i]
