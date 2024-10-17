@@ -660,11 +660,9 @@ def main():
     for i in range(num_images_to_save):
         image, target = train_dataset[i]
         
-        # Convert PIL Image to tensor
-        image = TF.to_tensor(image)
-        
-        # Apply the entire transform pipeline
-        image, target = transform_pipeline(image, target)
+        # Apply each transform individually
+        for transform in individual_transforms:
+            image, target = transform(image, target)
         
         save_augmented_image(image, target, augmented_images_dir, i)
 
