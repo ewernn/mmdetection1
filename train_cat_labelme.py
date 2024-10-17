@@ -247,7 +247,7 @@ def get_transform(train, brightness_range, contrast_range):
             RandomAdjustSharpness(sharpness_factor=2, p=0.5),
         ])
     transforms.append(lambda img, target: (expand_channels(img), target))
-    return Compose(transforms)
+    return Compose(transforms), transforms  # Return both the composed transform and the list of transforms
 
 def collate_fn(batch):
     return tuple(zip(*batch))
@@ -581,6 +581,32 @@ def unfreeze_layers(model, num_layers):
 
     return model
 
+def save_augmented_image(image, target, save_dir, image_id):
+    """
+    Save an augmented image with its bounding boxes.
+    """
+    image_pil = to_pil_image(image.cpu())
+    
+    fig, ax = plt.subplots(1, figsize=(12, 8))
+    ax.imshow(image_pil)
+    
+    boxes = target["boxes"].cpu()
+    labels = target["labels"].cpu()
+    
+    for box, label in zip(boxes, labels):
+        x, y, w, h = box[0].item(), box[1].item(), (box[2]-box[0]).item(), (box[3]-box[1]).item()
+        rect = patches.Rectangle((x, y), w, h, linewidth=2, edgecolor='r', facecolor='none')
+        ax.add_patch(rect)
+        ax.text(x, y, f'Label: {label.item()}', color='r', fontsize=10, verticalalignment='top')
+    
+    ax.set_xticks([])
+    ax.set_yticks([])
+    plt.title(f'Augmented Image ID: {image_id}')
+    
+    save_path = os.path.join(save_dir, f'augmented_image_{image_id}.png')
+    plt.savefig(save_path, bbox_inches='tight', dpi=300)
+    plt.close(fig)
+
 def main():
     global use_wandb, use_colab
 
@@ -614,13 +640,34 @@ def main():
     preload = not args.no_preload
     brightness_range = (args.brightness_min, args.brightness_max)
     contrast_range = (args.contrast_min, args.contrast_max)
-    train_dataset = CocoDataset(data_root, train_ann_file, transforms=get_transform(train=True, brightness_range=brightness_range, contrast_range=contrast_range), preload=preload, only_10=only_10)#, subfolder='Train')
-    val_dataset = CocoDataset(data_root, val_ann_file, transforms=get_transform(train=False, brightness_range=brightness_range, contrast_range=contrast_range), preload=preload, only_10=only_10)#, subfolder='Test')
+    train_dataset = CocoDataset(data_root, train_ann_file, transforms=get_transform(train=True, brightness_range=brightness_range, contrast_range=contrast_range)[0], preload=preload, only_10=only_10)
+    val_dataset = CocoDataset(data_root, val_ann_file, transforms=get_transform(train=False, brightness_range=brightness_range, contrast_range=contrast_range)[0], preload=preload, only_10=only_10)
 
     print("Creating data loaders...")
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True, collate_fn=collate_fn)
     print("Data loaders created.")
+
+    # Create a directory to save augmented images
+    augmented_images_dir = '/content/drive/MyDrive/MM/CatKidney/exps/annotated-augmented-photos/'
+    os.makedirs(augmented_images_dir, exist_ok=True)
+
+    # Get the transform pipeline
+    transform_pipeline, individual_transforms = get_transform(train=True, brightness_range=brightness_range, contrast_range=contrast_range)
+
+    # Save augmented images
+    num_images_to_save = 100
+    print(f"Saving {num_images_to_save} augmented images...")
+    for i in range(num_images_to_save):
+        image, target = train_dataset[i]
+        
+        # Apply each transform individually
+        for transform in individual_transforms:
+            image, target = transform(image, target)
+        
+        save_augmented_image(image, target, augmented_images_dir, i)
+
+    print(f"Saved {num_images_to_save} augmented images in {augmented_images_dir}")
 
     print("Creating model...")
     model = create_model(args, num_classes)
@@ -666,19 +713,13 @@ def main():
     print(f"Validation dataset size: {len(val_dataset)}")
 
     if args.gradual_unfreeze:
-        unfreeze_schedule = {
-            10: 1,
-            20: 2,
-            30: 3,
-            40: 4,
-        }
+        unfreeze_schedule = {10: 1, 20: 2, 30: 3, 40: 4}
     else:
         unfreeze_schedule = {}
 
     for epoch in range(start_epoch, num_epochs):
         if args.gradual_unfreeze and epoch in unfreeze_schedule:
             model = unfreeze_layers(model, unfreeze_schedule[epoch])
-            # Recreate optimizer with different learning rates
             params = [
                 {'params': [p for n, p in model.named_parameters() if 'backbone' not in n], 'lr': learning_rate},
                 {'params': [p for n, p in model.named_parameters() if 'backbone' in n], 'lr': learning_rate * 0.1},
