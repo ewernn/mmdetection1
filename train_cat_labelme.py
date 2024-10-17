@@ -560,7 +560,7 @@ def parse_arguments():
     parser.add_argument('--brightness_min', type=float, default=0.68, help='Minimum brightness factor')
     #parser.add_argument('--brightness_max', type=float, default=1.42, help='Maximum brightness factor')
     parser.add_argument('--brightness_max', type=float, default=1.32, help='Maximum brightness factor')
-    p#arser.add_argument('--contrast_min', type=float, default=0.44, help='Minimum contrast factor')
+    #parser.add_argument('--contrast_min', type=float, default=0.44, help='Minimum contrast factor')
     parser.add_argument('--contrast_min', type=float, default=0.64, help='Minimum contrast factor')
     #parser.add_argument('--contrast_max', type=float, default=1.62, help='Maximum contrast factor')
     parser.add_argument('--contrast_max', type=float, default=1.52, help='Maximum contrast factor')
