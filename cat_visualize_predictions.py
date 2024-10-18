@@ -167,9 +167,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
-    model_path = f"{data_root}{args.runId}/best_model.pth"
-    coco_path = data_root + 'COCO_2/val_Data_coco_format-labelme.json'
+    # data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
+    data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct9'
+    # model_path = f"{data_root}{args.runId}/best_model.pth"
+    model_path = f'/content/drive/MyDrive/MM/CatKidney/exps/{args.runId}/best_model.pth'
+    # coco_path = data_root + 'COCO_2/val_Data_coco_format-labelme.json'
+    coco_path = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct9/coco_output/two_only_test_Data_coco_format.json'
     img_dir = data_root
     save_dir = data_root + 'predictions_output-sep20/'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
