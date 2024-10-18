@@ -12,6 +12,7 @@ from pycocotools.coco import COCO
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models import ResNet152_Weights
 import argparse
+from pycocotools.cocoeval import COCOeval
 
 def create_model(device, num_classes):
     weights = ResNet152_Weights.DEFAULT
@@ -98,6 +99,13 @@ def visualize_and_save(image, gt_boxes, pred_boxes, pred_scores, pred_labels, im
     plt.savefig(os.path.join(save_dir, f'image_{image_id}.png'), bbox_inches='tight')
     plt.close(fig)
 
+def calculate_mAP(coco_gt, coco_dt):
+    coco_eval = COCOeval(coco_gt, coco_dt, 'bbox')
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    coco_eval.summarize()
+    return coco_eval.stats[0]  # mAP @ IoU=0.50:0.95
+
 def main(model_path, coco_path, img_dir, save_dir, device):
     num_classes = 3
     model = load_model(model_path, device, num_classes)
@@ -106,6 +114,7 @@ def main(model_path, coco_path, img_dir, save_dir, device):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
+    coco_results = []
     for img_id in img_ids:
         img_info = coco.loadImgs(img_id)[0]
         path = img_info['file_name']
@@ -132,6 +141,13 @@ def main(model_path, coco_path, img_dir, save_dir, device):
         pred_labels = pred_labels[mask]
 
         visualize_and_save(image_tensor.squeeze(0), gt_boxes, pred_boxes, pred_scores, pred_labels, img_id, save_dir)
+        coco_results.extend([{'image_id': img_id, 'category_id': int(label) + 1, 'bbox': [x_min, y_min, width, height]} for x_min, y_min, width, height, label in zip(pred_boxes, pred_scores, pred_labels)])
+
+    coco_gt = COCO(coco_path)
+    coco_dt = coco_gt.loadRes(coco_results)
+    
+    mAP = calculate_mAP(coco_gt, coco_dt)
+    print(f"mAP @ IoU=0.50:0.95: {mAP:.4f}")
 
 #/content/drive/MyDrive/MM/CatKidney/data/cat-dataset/ozt72mge/best_model.pth
 if __name__ == "__main__":
