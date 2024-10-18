@@ -140,7 +140,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
+    #data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
+    data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct9/'
     model_path = f"{data_root}{args.runId}/best_model.pth"
     coco_path = data_root + 'COCO_2/val_Data_coco_format-labelme.json'
     img_dir = data_root
