@@ -141,7 +141,18 @@ def main(model_path, coco_path, img_dir, save_dir, device):
         pred_labels = pred_labels[mask]
 
         visualize_and_save(image_tensor.squeeze(0), gt_boxes, pred_boxes, pred_scores, pred_labels, img_id, save_dir)
-        coco_results.extend([{'image_id': img_id, 'category_id': int(label) + 1, 'bbox': [x_min, y_min, width, height]} for x_min, y_min, width, height, label in zip(pred_boxes, pred_scores, pred_labels)])
+        
+        # Corrected code for extending coco_results
+        for box, score, label in zip(pred_boxes, pred_scores, pred_labels):
+            x_min, y_min, x_max, y_max = box
+            width = x_max - x_min
+            height = y_max - y_min
+            coco_results.append({
+                'image_id': img_id,
+                'category_id': int(label),  # Removed +1 as it depends on your category indexing
+                'bbox': [x_min, y_min, width, height],
+                'score': float(score)
+            })
 
     coco_gt = COCO(coco_path)
     coco_dt = coco_gt.loadRes(coco_results)
