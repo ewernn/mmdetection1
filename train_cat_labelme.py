@@ -2,6 +2,7 @@ import os
 import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
+from torchvision.ops import RoIAlign
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 from pycocotools.coco import COCO
@@ -468,7 +469,14 @@ def create_model(args, num_classes):
 
     anchor_generator = AnchorGenerator(sizes=anchor_sizes, aspect_ratios=aspect_ratios)
 
-    model = FasterRCNN(backbone, num_classes=num_classes, rpn_anchor_generator=anchor_generator)
+    # Create the RoI Align layer
+    roi_align = RoIAlign(output_size=(7, 7), spatial_scale=1/16, sampling_ratio=2)
+
+    # Create the Faster R-CNN model with RoI Align
+    model = FasterRCNN(backbone, 
+                       num_classes=num_classes, 
+                       rpn_anchor_generator=anchor_generator)#,
+                       #box_roi_pool=roi_align)
 
     # Ensure all parameters are trainable if not using gradual unfreeze
     if not args.gradual_unfreeze:
