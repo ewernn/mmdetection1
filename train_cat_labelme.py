@@ -1,5 +1,7 @@
 import os
 import torch
+import torch.nn as nn
+
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 from torch.utils.data import DataLoader, Dataset
@@ -10,7 +12,11 @@ import wandb
 import math
 import argparse
 import random
+
 import torchvision
+from torchvision.models.detection import CascadeRCNN
+from torchvision.models.detection.cascade_rcnn import CascadeRCNNPredictor
+
 from torchvision.models import ResNet101_Weights, ResNet152_Weights, ResNet50_Weights
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection import FasterRCNN
@@ -368,9 +374,6 @@ def evaluate(model, data_loader, device, epoch, args):
             
             boxes, scores, labels = filter_kidney_predictions(boxes, scores, labels)
             
-            # if i * len(images) + j < 10:
-            #     print(f"Image {i * len(images) + j + 1}: boxes: {boxes}, scores: {scores}, labels: {labels}")
-            
             if len(boxes) > 0:
                 for box, score, label in zip(boxes, scores, labels):
                     coco_results.append({
@@ -468,7 +471,10 @@ def create_model(args, num_classes):
 
     anchor_generator = AnchorGenerator(sizes=anchor_sizes, aspect_ratios=aspect_ratios)
 
-    model = FasterRCNN(backbone, num_classes=num_classes, rpn_anchor_generator=anchor_generator)
+    # Create Cascade R-CNN model
+    model = CascadeRCNN(backbone, 
+                        num_classes=num_classes, 
+                        rpn_anchor_generator=anchor_generator)
 
     # Ensure all parameters are trainable if not using gradual unfreeze
     if not args.gradual_unfreeze:
@@ -478,32 +484,28 @@ def create_model(args, num_classes):
     return model
 
 def modify_model(model, num_classes, args):
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    # Modify the box predictor for each stage of the cascade
+    for stage in model.roi_heads.box_predictor:
+        in_features = stage.cls_score.in_features
+        stage.cls_score = nn.Linear(in_features, num_classes)
+        stage.bbox_pred = nn.Linear(in_features, num_classes * 4)
 
-    # Increase NMS threshold to be more selective
-    model.rpn.nms_thresh = args.rpn_nms_thresh  # Original: 0.7
+    # Adjust RPN parameters
+    model.rpn.nms_thresh = args.rpn_nms_thresh
+    model.rpn.fg_iou_thresh = args.rpn_fg_iou_thresh
+    model.rpn.bg_iou_thresh = args.rpn_bg_iou_thresh
 
-    # Increase IoU thresholds for foreground and background
-    model.rpn.fg_iou_thresh = args.rpn_fg_iou_thresh  # Original: 0.7
-    model.rpn.bg_iou_thresh = args.rpn_bg_iou_thresh  # Original: 0.3
-
-    # Reduce batch size and positive fraction to be more selective
-    model.roi_heads.batch_size_per_image = args.roi_heads_batch_size_per_image  # Original: 8
-    model.roi_heads.positive_fraction = args.roi_heads_positive_fraction  # Original: 0.25
-
-    # Increase score threshold for higher confidence
-    model.roi_heads.score_thresh = args.roi_heads_score_thresh  # Original: 0.6
-
-    # Slightly increase NMS threshold for ROI heads
-    model.roi_heads.nms_thresh = args.roi_heads_nms_thresh  # Original: 0.4
-
-    # Increase detections per image
-    model.roi_heads.detections_per_img = args.roi_heads_detections_per_img  # Original: 1
+    # Adjust ROI parameters for each stage
+    for i, stage in enumerate(model.roi_heads.box_roi_pool):
+        model.roi_heads.box_batch_size_per_image[i] = args.roi_heads_batch_size_per_image
+        model.roi_heads.box_positive_fraction[i] = args.roi_heads_positive_fraction
+        model.roi_heads.box_score_thresh[i] = args.roi_heads_score_thresh
+        model.roi_heads.box_nms_thresh[i] = args.roi_heads_nms_thresh
+        model.roi_heads.box_detections_per_img[i] = args.roi_heads_detections_per_img
 
     # Adjust pre and post NMS top N
-    model.rpn.pre_nms_top_n = lambda: args.rpn_pre_nms_top_n  # Original: 150
-    model.rpn.post_nms_top_n = lambda: args.rpn_post_nms_top_n  # Original: 20
+    model.rpn.pre_nms_top_n = lambda: args.rpn_pre_nms_top_n
+    model.rpn.post_nms_top_n = lambda: args.rpn_post_nms_top_n
 
     return model
 
@@ -529,7 +531,7 @@ def setup_environment(args):
     return data_root, chkpt_dir, device
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Train C2 Detection Model')
+    parser = argparse.ArgumentParser(description='Train Cascade R-CNN Cat Kidney Detection Model')
     parser.add_argument('--wandb', action='store_true', help='Use Weights & Biases for logging')
     parser.add_argument('--colab', action='store_true', help='Use Google Colab data path')
     parser.add_argument('--only_10', action='store_true', help='Use only 10 samples for quick testing')
@@ -567,6 +569,8 @@ def parse_arguments():
     parser.add_argument('--unfreeze_start_epoch', type=int, default=20, help='Epoch to start unfreezing layers')
     parser.add_argument('--unfreeze_frequency', type=int, default=20, help='Frequency of unfreezing layers (in epochs)')
     parser.add_argument('--unfreeze_lr_multiplier', type=float, default=0.05, help='Learning rate multiplier for unfrozen layers')
+    parser.add_argument('--cascade_iou_thresholds', nargs='+', type=float, default=[0.5, 0.6, 0.7],
+                        help='IoU thresholds for cascade stages')
     return parser.parse_args()
 
 
