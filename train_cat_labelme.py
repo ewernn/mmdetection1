@@ -541,7 +541,7 @@ def parse_arguments():
     parser.add_argument('--no_preload', action='store_true', help='Preload images into memory')
     parser.add_argument('--all_images', action='store_true', help='use all images in dataloaders (including NaN entries)')
     parser.add_argument('--resume', type=str, default='', help='Path to checkpoint to resume from')
-    parser.add_argument('--rpn_nms_thresh', type=float, default=0.3, help='RPN NMS threshold')
+    parser.add_argument('--rpn_nms_thresh', type=float, default=0.9, help='RPN NMS threshold')
     parser.add_argument('--roi_heads_nms_thresh', type=float, default=0.1, help='ROI heads NMS threshold')
     parser.add_argument('--roi_heads_score_thresh', type=float, default=0.45, help='ROI heads score threshold')
     parser.add_argument('--rpn_bg_iou_thresh', type=float, default=0.1, help='RPN background IoU threshold')
