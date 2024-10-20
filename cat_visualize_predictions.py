@@ -167,13 +167,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
-    data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct9/'
-    # model_path = f"{data_root}{args.runId}/best_model.pth"
-    #model_path = f'/content/drive/MyDrive/MM/CatKidney/exps/{args.runId}/best_model.pth'
-    model_path = f'/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/3bwem77j/best_model.pth' # 3bwem77j from old sweep
+    data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
+    #data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct9/'
+    #model_path = f"{data_root}{args.runId}/best_model.pth"
+    model_path = f'/content/drive/MyDrive/MM/CatKidney/exps/{args.runId}/best_model.pth'
+    #model_path = f'/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/3bwem77j/best_model.pth' # 3bwem77j from old sweep
     coco_path = data_root + 'coco_output/two_only_test_Data_coco_format.json'
     img_dir = data_root
-    save_dir = data_root + 'predictions_output-oct18-3bwem77j_best-from-old-sweep/'
+    save_dir = data_root + 'predictions_output-oct18-{args.runId}_best-from-old-sweep/'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     main(model_path, coco_path, img_dir, save_dir, device)
