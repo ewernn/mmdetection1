@@ -39,14 +39,14 @@ def modify_model(model, num_classes):
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
-    # Apply modifications with hardcoded values (matching the defaults in train_cat.py)
-    model.rpn.nms_thresh = 0.3#0.6
-    model.rpn.fg_iou_thresh = 0.8
-    model.rpn.bg_iou_thresh = 0.5
+    # Apply modifications with default values from train_cat_labelme.py
+    model.rpn.nms_thresh = 0.3
+    model.rpn.fg_iou_thresh = 0.85
+    model.rpn.bg_iou_thresh = 0.1
     model.roi_heads.batch_size_per_image = 32
     model.roi_heads.positive_fraction = 0.3
-    model.roi_heads.score_thresh = 0.6
-    model.roi_heads.nms_thresh = 0.1#0.3
+    model.roi_heads.score_thresh = 0.45
+    model.roi_heads.nms_thresh = 0.1
     model.roi_heads.detections_per_img = 4
 
     model.rpn.pre_nms_top_n = lambda: 200
