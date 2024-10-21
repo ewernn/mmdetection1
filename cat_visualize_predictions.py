@@ -40,7 +40,7 @@ def modify_model(model, num_classes):
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
     # Apply modifications with default values from train_cat_labelme.py
-    model.rpn.nms_thresh = 0.3
+    model.rpn.nms_thresh = 0.9
     model.rpn.fg_iou_thresh = 0.85
     model.rpn.bg_iou_thresh = 0.1
     model.roi_heads.batch_size_per_image = 32
@@ -118,8 +118,7 @@ def main(model_path, coco_path, img_dir, save_dir, device):
     for img_id in img_ids:
         img_info = coco.loadImgs(img_id)[0]
         path = img_info['file_name']
-        image = Image.open(os.path.join(img_dir, path)).convert("L")  # Convert image to grayscale
-        image = image.convert("RGB")  # Convert grayscale image to RGB by replicating channels
+        image = Image.open(os.path.join(img_dir, path)).convert("RGB")  # Load as RGB directly
         image_tensor = torch.from_numpy(np.array(image)).permute(2, 0, 1).float().div(255).unsqueeze(0).to(device)
 
         ann_ids = coco.getAnnIds(imgIds=img_id)
@@ -134,7 +133,7 @@ def main(model_path, coco_path, img_dir, save_dir, device):
         pred_labels = prediction['labels'].cpu().numpy()
         
         # Filter predictions based on a score threshold
-        score_threshold = 0.5
+        score_threshold = 0.68  # Match the score_thresh from parse_arguments
         mask = pred_scores > score_threshold
         pred_boxes = pred_boxes[mask]
         pred_scores = pred_scores[mask]
