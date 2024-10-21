@@ -527,7 +527,7 @@ def load_checkpoint(filepath, model, optimizer):
 
 def setup_environment(args):
     if args.colab:
-        data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct9/'
+        data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct20/'
         chkpt_dir = '/content/drive/MyDrive/MM/CatKidney/exps/'
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     else:
@@ -655,11 +655,11 @@ def main():
 
     print("Initializing datasets...")
     if args.all_images:
-        train_ann_file = data_root + 'coco_output/two_only_train_Data_coco_format.json'
-        val_ann_file = data_root + 'coco_output/two_only_val_Data_coco_format.json'
+        train_ann_file = data_root + 'train.json'
+        val_ann_file = data_root + 'val.json'
     else:
-        train_ann_file = data_root + 'coco_output/two_only_train_Data_coco_format.json'
-        val_ann_file = data_root + 'coco_output/two_only_val_Data_coco_format.json'
+        train_ann_file = data_root + 'train.json'
+        val_ann_file = data_root + 'val.json'
 
     preload = not args.no_preload
     brightness_range = (args.brightness_min, args.brightness_max)
