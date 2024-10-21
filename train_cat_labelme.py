@@ -130,15 +130,25 @@ class RandomAffine:
 
         image = TF.affine(image, angle, translations, scale, 0, fill=self.fill)
 
-        if "boxes" in target:
+        if "boxes" in target and len(target["boxes"]) > 0:
             boxes = target["boxes"]
             transformed_boxes = []
             for box in boxes:
                 transformed_box = self._transform_bbox(box, matrix, width, height)
-                transformed_boxes.append(transformed_box)
-            target["boxes"] = torch.stack(transformed_boxes)
+                if self._is_valid_box(transformed_box, width, height):
+                    transformed_boxes.append(transformed_box)
+            
+            if transformed_boxes:
+                target["boxes"] = torch.stack(transformed_boxes)
+            else:
+                # If all boxes are filtered out, return the original image and target
+                return image, target
 
         return image, target
+
+    def _is_valid_box(self, box, width, height):
+        x1, y1, x2, y2 = box
+        return (x2 > x1) and (y2 > y1) and (x1 < width) and (y1 < height)
 
     def _get_affine_matrix(self, center, angle, translations, scale):
         angle = math.radians(angle)
