@@ -378,9 +378,6 @@ def evaluate(model, data_loader, device, epoch, args):
             
             boxes, scores, labels = filter_kidney_predictions(boxes, scores, labels)
             
-            # if i * len(images) + j < 10:
-            #     print(f"Image {i * len(images) + j + 1}: boxes: {boxes}, scores: {scores}, labels: {labels}")
-            
             if len(boxes) > 0:
                 for box, score, label in zip(boxes, scores, labels):
                     coco_results.append({
@@ -389,6 +386,13 @@ def evaluate(model, data_loader, device, epoch, args):
                         "bbox": [float(box[0]), float(box[1]), float(box[2] - box[0]), float(box[3] - box[1])],
                         "score": float(score),
                     })
+            
+            # Save visualization every 10 epochs and for the first 10 images
+            if epoch % 10 == 0 and i * len(images) + j < 10:
+                gt_boxes = target["boxes"].cpu()
+                gt_labels = target["labels"].cpu()
+                visualize_boxes(image.cpu(), gt_boxes, gt_labels, boxes.cpu(), labels.cpu(), 
+                                image_id, os.path.join(save_dir, f'image_{image_id}.png'))
     
     if len(coco_results) == 0:
         print("No valid detections found. Returning 0 mAP.")
@@ -751,3 +755,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
