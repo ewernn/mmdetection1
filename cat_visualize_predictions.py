@@ -118,13 +118,13 @@ def main(model_path, coco_path, img_dir, save_dir, device):
     for img_id in img_ids:
         img_info = coco.loadImgs(img_id)[0]
         path = img_info['file_name']
-        image = Image.open(os.path.join(img_dir, path)).convert("RGB")  # Load as RGB directly
-        image_tensor = torch.from_numpy(np.array(image)).permute(2, 0, 1).float().div(255).unsqueeze(0).to(device)
+        image = Image.open(os.path.join(img_dir, path)).convert("L")  # Load as grayscale
+        image_tensor = torch.from_numpy(np.array(image)).unsqueeze(0).float().div(255).unsqueeze(0).to(device)
 
         ann_ids = coco.getAnnIds(imgIds=img_id)
         anns = coco.loadAnns(ann_ids)
         gt_boxes = [ann['bbox'] for ann in anns]  # [x, y, width, height]
-        model.to(device)
+        
         with torch.no_grad():
             prediction = model(image_tensor)[0]
 
@@ -133,7 +133,7 @@ def main(model_path, coco_path, img_dir, save_dir, device):
         pred_labels = prediction['labels'].cpu().numpy()
         
         # Filter predictions based on a score threshold
-        score_threshold = 0.68  # Match the score_thresh from parse_arguments
+        score_threshold = 0.45  # Match the score_thresh from modify_model
         mask = pred_scores > score_threshold
         pred_boxes = pred_boxes[mask]
         pred_scores = pred_scores[mask]
@@ -141,14 +141,13 @@ def main(model_path, coco_path, img_dir, save_dir, device):
 
         visualize_and_save(image_tensor.squeeze(0), gt_boxes, pred_boxes, pred_scores, pred_labels, img_id, save_dir)
         
-        # Corrected code for extending coco_results
         for box, score, label in zip(pred_boxes, pred_scores, pred_labels):
             x_min, y_min, x_max, y_max = box
             width = x_max - x_min
             height = y_max - y_min
             coco_results.append({
                 'image_id': img_id,
-                'category_id': int(label),  # Removed +1 as it depends on your category indexing
+                'category_id': int(label),
                 'bbox': [x_min, y_min, width, height],
                 'score': float(score)
             })
@@ -173,6 +172,6 @@ if __name__ == "__main__":
     #model_path = f'/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/3bwem77j/best_model.pth' # 3bwem77j from old sweep
     coco_path = data_root + 'test.json'
     img_dir = data_root
-    save_dir = data_root + 'predictions_output-oct21-{args.runId}/'
+    save_dir = data_root + f'predictions_output-oct21-{args.runId}/'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     main(model_path, coco_path, img_dir, save_dir, device)
