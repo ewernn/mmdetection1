@@ -60,7 +60,7 @@ def main():
     df.columns = df.columns.str.strip()
     
     # Create output directory if it doesn't exist
-    output_dir = '/Users/ewern/Desktop/code/MetronMind/data/DataCatSep26-Dataonly2'
+    output_dir = '/Users/ewern/Desktop/code/MetronMind/data/DataCatSep26-Dataonly2-attempt2'
     os.makedirs(output_dir, exist_ok=True)
 
     # Process all images
