@@ -472,13 +472,21 @@ def create_model(args, num_classes):
     backbone = resnet_fpn_backbone(backbone_name=args.backbone, weights=weights, trainable_layers=trainable_layers)
 
     anchor_sizes = (
-        (89, 89),    # Very small objects
-        (112, 112),  # Small objects
-        (141, 141),  # Medium objects
-        (178, 178),  # Large objects
-        (225, 225),  # Very large objects
+        (160, 160),    # Very small objects
+        (182, 182),  # Small objects
+        (200, 200),  # Medium objects
+        (222, 222),  # Large objects
+        (251, 251),  # Very large objects
     )
-    aspect_ratios = ((0.69, 0.74, 0.79, 0.84, 1.0),) * len(anchor_sizes)
+    aspect_ratios = ((0.877, 0.8, 0.752, 0.704, 0.641),) * len(anchor_sizes)
+    # anchor_sizes = (
+    #     (89, 89),    # Very small objects
+    #     (112, 112),  # Small objects
+    #     (141, 141),  # Medium objects
+    #     (178, 178),  # Large objects
+    #     (225, 225),  # Very large objects
+    # )
+    # aspect_ratios = ((0.69, 0.74, 0.79, 0.84, 1.0),) * len(anchor_sizes)
 
     anchor_generator = AnchorGenerator(sizes=anchor_sizes, aspect_ratios=aspect_ratios)
 
