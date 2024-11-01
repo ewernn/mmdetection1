@@ -539,7 +539,8 @@ def load_checkpoint(filepath, model, optimizer):
 
 def setup_environment(args):
     if args.colab:
-        data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct20/'
+        #data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct20/'
+        data_root = '/content/drive/MyDrive/MM/CatKidney/data/a_fresh_cat_dataset/images/'
         chkpt_dir = '/content/drive/MyDrive/MM/CatKidney/exps/'
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     else:

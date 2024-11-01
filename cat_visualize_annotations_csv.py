@@ -56,20 +56,24 @@ def draw_bboxes(image_path, row, output_path):
 
 def main():
     # Read the CSV file
-    df = pd.read_csv('/Users/ewern/Desktop/code/MetronMind/data/DataCatSep26/Data_only2.csv')
+    #df = pd.read_csv('/Users/ewern/Desktop/code/MetronMind/data/DataCatSep26/Data_only2.csv')
+    #df = pd.read_csv('/Users/ewern/Desktop/code/MetronMind/data/cat_kidney_dataset_csv_filtered/Data.csv')
+    #df = pd.read_csv('/Users/ewern/Desktop/code/MetronMind/data/DataCatSep26/Data_only2.csv')
+    df = pd.read_csv('/Users/ewern/Desktop/code/MetronMind/data/a_fresh_cat_dataset/combined_data.csv')
     df.columns = df.columns.str.strip()
     
     # Create output directory if it doesn't exist
-    output_dir = '/Users/ewern/Desktop/code/MetronMind/data/DataCatSep26-Dataonly2-oct23'
+    output_dir = '/Users/ewern/Desktop/code/MetronMind/data/cat_visualized_annotations-fresh'
     os.makedirs(output_dir, exist_ok=True)
 
     # Process all images
     i = 0
     for _, row in tqdm(df.iterrows(), desc="Processing images"):
-        if i > 20:
-            break
+        # if i > 20:
+        #     break
         i += 1
-        image_path = os.path.join('/Users/ewern/Desktop/code/MetronMind/data/DataCatSep26', row['Image'])
+        image_path = os.path.join('/Users/ewern/Desktop/code/MetronMind/data/a_fresh_cat_dataset/images', row['Image'])
+        #image_path = os.path.join('/Users/ewern/Desktop/code/MetronMind/data/cat_kidney_dataset_csv_filtered', row['Image'])
         output_path = os.path.join(output_dir, f"annotated_{row['Image']}")
         
         if not os.path.exists(image_path):
