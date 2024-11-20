@@ -166,12 +166,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/'
-    data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct20/'
+    #data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct20/'
+    data_root = '/content/drive/MyDrive/MM/CatKidney/data/a_fresh_cat_dataset/images/'
     #model_path = f"{data_root}{args.runId}/best_model.pth"
     model_path = f'/content/drive/MyDrive/MM/CatKidney/exps/{args.runId}/best_model.pth'
     #model_path = f'/content/drive/MyDrive/MM/CatKidney/data/cat_kidney_dataset_csv_filtered/3bwem77j/best_model.pth' # 3bwem77j from old sweep
     coco_path = data_root + 'test.json'
     img_dir = data_root
-    save_dir = data_root + f'predictions_output-oct21-{args.runId}/'
+    save_dir = data_root + f'predictions_output-nov20-{args.runId}/'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     main(model_path, coco_path, img_dir, save_dir, device)
