@@ -354,6 +354,10 @@ def aggregate_predictions(predictions):
 def evaluate(model, data_loader, device, epoch, args):
     model.eval()
     coco = data_loader.dataset.coco
+    # Add this check to prevent the error
+    if 'info' not in coco.dataset:
+        coco.dataset['info'] = {}
+        
     coco_results = []
     if use_colab:
         save_dir = f'/content/drive/MyDrive/MM/CatKidney/exps/imgs_out/epoch_{epoch}'
@@ -398,7 +402,13 @@ def evaluate(model, data_loader, device, epoch, args):
         print("No valid detections found. Returning 0 mAP.")
         return {"mAP": 0.0, "AP_50": 0.0, "AP_75": 0.0}
     
-    coco_dt = coco.loadRes(coco_results)
+    #coco_dt = coco.loadRes(coco_results)
+    try:
+        coco_dt = coco.loadRes(coco_results)
+    except KeyError:
+        if 'info' not in coco.dataset:
+            coco.dataset['info'] = {}
+        coco_dt = coco.loadRes(coco_results)
     coco_eval = COCOeval(coco, coco_dt, "bbox")
     coco_eval.evaluate()
     coco_eval.accumulate()
