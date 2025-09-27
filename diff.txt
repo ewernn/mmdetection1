@@ -1,0 +1,158 @@
+diff --git a/train_cat_labelme.py b/train_cat_labelme.py
+index 126b604..82cb0c3 100644
+--- a/train_cat_labelme.py
++++ b/train_cat_labelme.py
+@@ -130,26 +130,16 @@ class RandomAffine:
+ 
+         image = TF.affine(image, angle, translations, scale, 0, fill=self.fill)
+ 
+-        if "boxes" in target and len(target["boxes"]) > 0:
++        if "boxes" in target:
+             boxes = target["boxes"]
+             transformed_boxes = []
+             for box in boxes:
+                 transformed_box = self._transform_bbox(box, matrix, width, height)
+-                if self._is_valid_box(transformed_box, width, height):
+-                    transformed_boxes.append(transformed_box)
+-            
+-            if transformed_boxes:
+-                target["boxes"] = torch.stack(transformed_boxes)
+-            else:
+-                # If all boxes are filtered out, return the original image and target
+-                return image, target
++                transformed_boxes.append(transformed_box)
++            target["boxes"] = torch.stack(transformed_boxes)
+ 
+         return image, target
+ 
+-    def _is_valid_box(self, box, width, height):
+-        x1, y1, x2, y2 = box
+-        return (x2 > x1) and (y2 > y1) and (x1 < width) and (y1 < height)
+-
+     def _get_affine_matrix(self, center, angle, translations, scale):
+         angle = math.radians(angle)
+ 
+@@ -354,12 +344,6 @@ def aggregate_predictions(predictions):
+ def evaluate(model, data_loader, device, epoch, args):
+     model.eval()
+     coco = data_loader.dataset.coco
+-    # Add this check to prevent the error
+-    if 'info' not in coco.dataset:
+-        coco.dataset['info'] = {}
+-    if 'licenses' not in coco.dataset:
+-        coco.dataset['licenses'] = []
+-
+     coco_results = []
+     if use_colab:
+         save_dir = f'/content/drive/MyDrive/MM/CatKidney/exps/imgs_out/epoch_{epoch}'
+@@ -384,6 +368,9 @@ def evaluate(model, data_loader, device, epoch, args):
+             
+             boxes, scores, labels = filter_kidney_predictions(boxes, scores, labels)
+             
++            # if i * len(images) + j < 10:
++            #     print(f"Image {i * len(images) + j + 1}: boxes: {boxes}, scores: {scores}, labels: {labels}")
++            
+             if len(boxes) > 0:
+                 for box, score, label in zip(boxes, scores, labels):
+                     coco_results.append({
+@@ -392,25 +379,12 @@ def evaluate(model, data_loader, device, epoch, args):
+                         "bbox": [float(box[0]), float(box[1]), float(box[2] - box[0]), float(box[3] - box[1])],
+                         "score": float(score),
+                     })
+-            
+-            # Save visualization every 10 epochs and for the first 10 images
+-            if epoch % 10 == 0 and i * len(images) + j < 10:
+-                gt_boxes = target["boxes"].cpu()
+-                gt_labels = target["labels"].cpu()
+-                visualize_boxes(image.cpu(), gt_boxes, gt_labels, boxes.cpu(), labels.cpu(), 
+-                                image_id, os.path.join(save_dir, f'image_{image_id}.png'))
+     
+     if len(coco_results) == 0:
+         print("No valid detections found. Returning 0 mAP.")
+         return {"mAP": 0.0, "AP_50": 0.0, "AP_75": 0.0}
+     
+-    #coco_dt = coco.loadRes(coco_results)
+-    try:
+-        coco_dt = coco.loadRes(coco_results)
+-    except KeyError:
+-        if 'info' not in coco.dataset:
+-            coco.dataset['info'] = {}
+-        coco_dt = coco.loadRes(coco_results)
++    coco_dt = coco.loadRes(coco_results)
+     coco_eval = COCOeval(coco, coco_dt, "bbox")
+     coco_eval.evaluate()
+     coco_eval.accumulate()
+@@ -484,21 +458,13 @@ def create_model(args, num_classes):
+     backbone = resnet_fpn_backbone(backbone_name=args.backbone, weights=weights, trainable_layers=trainable_layers)
+ 
+     anchor_sizes = (
+-        (160, 160),    # Very small objects
+-        (182, 182),  # Small objects
+-        (200, 200),  # Medium objects
+-        (222, 222),  # Large objects
+-        (251, 251),  # Very large objects
++        (89, 89),    # Very small objects
++        (112, 112),  # Small objects
++        (141, 141),  # Medium objects
++        (178, 178),  # Large objects
++        (225, 225),  # Very large objects
+     )
+-    aspect_ratios = ((0.877, 0.8, 0.752, 0.704, 0.641),) * len(anchor_sizes)
+-    # anchor_sizes = (
+-    #     (89, 89),    # Very small objects
+-    #     (112, 112),  # Small objects
+-    #     (141, 141),  # Medium objects
+-    #     (178, 178),  # Large objects
+-    #     (225, 225),  # Very large objects
+-    # )
+-    # aspect_ratios = ((0.69, 0.74, 0.79, 0.84, 1.0),) * len(anchor_sizes)
++    aspect_ratios = ((0.69, 0.74, 0.79, 0.84, 1.0),) * len(anchor_sizes)
+ 
+     anchor_generator = AnchorGenerator(sizes=anchor_sizes, aspect_ratios=aspect_ratios)
+ 
+@@ -551,8 +517,7 @@ def load_checkpoint(filepath, model, optimizer):
+ 
+ def setup_environment(args):
+     if args.colab:
+-        #data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct20/'
+-        data_root = '/content/drive/MyDrive/MM/CatKidney/data/a_fresh_cat_dataset/images/'
++        data_root = '/content/drive/MyDrive/MM/CatKidney/data/cat-data-combined-oct9/'
+         chkpt_dir = '/content/drive/MyDrive/MM/CatKidney/exps/'
+         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+     else:
+@@ -576,9 +541,9 @@ def parse_arguments():
+     parser.add_argument('--no_preload', action='store_true', help='Preload images into memory')
+     parser.add_argument('--all_images', action='store_true', help='use all images in dataloaders (including NaN entries)')
+     parser.add_argument('--resume', type=str, default='', help='Path to checkpoint to resume from')
+-    parser.add_argument('--rpn_nms_thresh', type=float, default=0.9, help='RPN NMS threshold')
++    parser.add_argument('--rpn_nms_thresh', type=float, default=0.3, help='RPN NMS threshold')
+     parser.add_argument('--roi_heads_nms_thresh', type=float, default=0.1, help='ROI heads NMS threshold')
+-    parser.add_argument('--roi_heads_score_thresh', type=float, default=0.68, help='ROI heads score threshold')
++    parser.add_argument('--roi_heads_score_thresh', type=float, default=0.45, help='ROI heads score threshold')
+     parser.add_argument('--rpn_bg_iou_thresh', type=float, default=0.1, help='RPN background IoU threshold')
+     parser.add_argument('--rpn_fg_iou_thresh', type=float, default=0.85, help='RPN foreground IoU threshold')
+     parser.add_argument('--roi_heads_batch_size_per_image', type=int, default=32, help='ROI heads batch size per image')
+@@ -640,11 +605,11 @@ def main():
+ 
+     print("Initializing datasets...")
+     if args.all_images:
+-        train_ann_file = data_root + 'train.json'
+-        val_ann_file = data_root + 'val.json'
++        train_ann_file = data_root + 'coco_output/two_only_train_Data_coco_format.json'
++        val_ann_file = data_root + 'coco_output/two_only_val_Data_coco_format.json'
+     else:
+-        train_ann_file = data_root + 'train.json'
+-        val_ann_file = data_root + 'val.json'
++        train_ann_file = data_root + 'coco_output/two_only_train_Data_coco_format.json'
++        val_ann_file = data_root + 'coco_output/two_only_val_Data_coco_format.json'
+ 
+     preload = not args.no_preload
+     brightness_range = (args.brightness_min, args.brightness_max)
+@@ -775,5 +740,4 @@ def main():
+         wandb.finish()
+ 
+ if __name__ == "__main__":
+-    main()
+-
++    main()
+\ No newline at end of file

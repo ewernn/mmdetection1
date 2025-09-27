@@ -354,12 +354,13 @@ def aggregate_predictions(predictions):
 def evaluate(model, data_loader, device, epoch, args):
     model.eval()
     coco = data_loader.dataset.coco
-    # Add this check to prevent the error
+    
+    # Add missing metadata fields to prevent KeyError
     if 'info' not in coco.dataset:
         coco.dataset['info'] = {}
     if 'licenses' not in coco.dataset:
         coco.dataset['licenses'] = []
-
+    
     coco_results = []
     if use_colab:
         save_dir = f'/content/drive/MyDrive/MM/CatKidney/exps/imgs_out/epoch_{epoch}'
@@ -404,13 +405,8 @@ def evaluate(model, data_loader, device, epoch, args):
         print("No valid detections found. Returning 0 mAP.")
         return {"mAP": 0.0, "AP_50": 0.0, "AP_75": 0.0}
     
-    #coco_dt = coco.loadRes(coco_results)
-    try:
-        coco_dt = coco.loadRes(coco_results)
-    except KeyError:
-        if 'info' not in coco.dataset:
-            coco.dataset['info'] = {}
-        coco_dt = coco.loadRes(coco_results)
+    # Now this won't crash
+    coco_dt = coco.loadRes(coco_results)
     coco_eval = COCOeval(coco, coco_dt, "bbox")
     coco_eval.evaluate()
     coco_eval.accumulate()
@@ -576,9 +572,9 @@ def parse_arguments():
     parser.add_argument('--no_preload', action='store_true', help='Preload images into memory')
     parser.add_argument('--all_images', action='store_true', help='use all images in dataloaders (including NaN entries)')
     parser.add_argument('--resume', type=str, default='', help='Path to checkpoint to resume from')
-    parser.add_argument('--rpn_nms_thresh', type=float, default=0.9, help='RPN NMS threshold')
+    parser.add_argument('--rpn_nms_thresh', type=float, default=0.3, help='RPN NMS threshold')
     parser.add_argument('--roi_heads_nms_thresh', type=float, default=0.1, help='ROI heads NMS threshold')
-    parser.add_argument('--roi_heads_score_thresh', type=float, default=0.68, help='ROI heads score threshold')
+    parser.add_argument('--roi_heads_score_thresh', type=float, default=0.45, help='ROI heads score threshold')
     parser.add_argument('--rpn_bg_iou_thresh', type=float, default=0.1, help='RPN background IoU threshold')
     parser.add_argument('--rpn_fg_iou_thresh', type=float, default=0.85, help='RPN foreground IoU threshold')
     parser.add_argument('--roi_heads_batch_size_per_image', type=int, default=32, help='ROI heads batch size per image')
