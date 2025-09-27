@@ -357,7 +357,9 @@ def evaluate(model, data_loader, device, epoch, args):
     # Add this check to prevent the error
     if 'info' not in coco.dataset:
         coco.dataset['info'] = {}
-        
+    if 'licenses' not in coco.dataset:
+        coco.dataset['licenses'] = []
+
     coco_results = []
     if use_colab:
         save_dir = f'/content/drive/MyDrive/MM/CatKidney/exps/imgs_out/epoch_{epoch}'
